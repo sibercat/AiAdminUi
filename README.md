@@ -14,7 +14,7 @@ A C++ DLL injection mod for The Isle dedicated servers (Unreal Engine 5.6) that 
 - **WPF Admin UI** - Modern Windows desktop interface for server management
 - **Chat Commands** - In-game admin commands for spawning and server control
 - **Fish Respawning** - Automated fish school respawning with distance checks
-- **Hunger Corpse System** - feature that spawns corpses when players get hungry
+- **Hunger Corpse System** - Feature that spawns corpses when players get hungry
 
 ### Hunger Corpse System
 When enabled, the mod monitors player hunger levels and automatically spawns corpses nearby when hunger drops below a threshold:
