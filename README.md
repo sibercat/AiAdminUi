@@ -1,11 +1,14 @@
-The Source is only for the mods UI
+# AI Admin UI
 
-Mod itself can be found in [Releases](https://github.com/sibercat/AiAdminUi/releases)
-![alt text](https://raw.githubusercontent.com/sibercat/AiAdminUi/refs/heads/main/uiScreen.png)
+**AI Admin UI** is the Windows desktop admin panel (WPF, .NET 10) for **IsleServerMod** — a C++ DLL injection mod for The Isle dedicated servers (Unreal Engine 5.6) that adds AI spawning, chat commands, fish respawning, and a Hunger Corpse system.
 
-# IsleServerMod
+This repository contains the **source for the UI only**. The packaged, standalone `AiAdminUi.exe` and the mod itself are on the [Releases](https://github.com/sibercat/AiAdminUi/releases) page.
 
-A C++ DLL injection mod for The Isle dedicated servers (Unreal Engine 5.6) that adds advanced server management features including AI spawning, chat commands, fish respawning, and a Hunger Corpse system.
+**Current version: v1.6**
+
+![AI Admin UI](https://raw.githubusercontent.com/sibercat/AiAdminUi/refs/heads/main/uiScreen.png)
+
+## About the mod
 
 ## Features
 

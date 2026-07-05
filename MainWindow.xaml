@@ -66,10 +66,20 @@
         </Grid.RowDefinitions>
 
         <StackPanel Grid.Row="0" Margin="0,0,0,12">
-            <TextBlock
-                FontSize="28"
-                FontWeight="Light"
-                Text="AI Admin UI" />
+            <StackPanel Orientation="Horizontal">
+                <TextBlock
+                    FontSize="28"
+                    FontWeight="Light"
+                    Text="AI Admin UI" />
+                <TextBlock
+                    x:Name="txtVersion"
+                    Margin="10,0,0,3"
+                    VerticalAlignment="Bottom"
+                    FontSize="15"
+                    FontWeight="SemiBold"
+                    Foreground="{StaticResource SecondaryTextBrush}"
+                    Text="v1.6" />
+            </StackPanel>
             <TextBlock
                 FontSize="13"
                 Foreground="{StaticResource SecondaryTextBrush}"

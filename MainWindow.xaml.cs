@@ -4,6 +4,8 @@ using System.Collections.ObjectModel;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Reflection;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -17,6 +19,7 @@ namespace AiAdminUi;
 public partial class MainWindow : Window
 {
     private readonly ObservableCollection<RuleItem> _rules = new();
+    private readonly ObservableCollection<string> _hungerSpeciesItems = new(SpeciesOrder);
     private readonly string _configPath;
     private AiConfig? _originalConfig;
     private bool _isLoading;
@@ -89,8 +92,10 @@ public partial class MainWindow : Window
             EnsureDefaultRules();
             cmbSpecies.ItemsSource = SpeciesOrder.ToList();
             cmbSpecies.SelectedIndex = 0;
-            cmbHungerCorpseSpecies.ItemsSource = SpeciesOrder.ToList();
+            cmbHungerCorpseSpecies.ItemsSource = _hungerSpeciesItems;
             cmbHungerCorpseSpecies.SelectedIndex = 0;
+
+            ApplyVersionToHeader();
             chkAutoSpawnEnabled.Checked += OnAutoSpawnEnabledChanged;
             chkAutoSpawnEnabled.Unchecked += OnAutoSpawnEnabledChanged;
 
@@ -205,6 +210,14 @@ public partial class MainWindow : Window
             "IsleServerMod_config.lua");
     }
 
+    private void ApplyVersionToHeader()
+    {
+        var version = Assembly.GetExecutingAssembly().GetName().Version;
+        string display = version is null ? "" : $"v{version.Major}.{version.Minor}";
+        txtVersion.Text = display;
+        Title = string.IsNullOrEmpty(display) ? "AI Admin UI" : $"AI Admin UI {display}";
+    }
+
     private void EnsureDefaultRules()
     {
         if (_rules.Count > 0) return;
@@ -292,6 +305,13 @@ public partial class MainWindow : Window
             string hungerSpecies = config.HungerCorpseSpecies ?? "";
             if (!string.IsNullOrEmpty(hungerSpecies))
             {
+                // Preserve a custom species that isn't in the built-in list instead of
+                // silently snapping it to the first entry (which would overwrite it on save).
+                if (!_hungerSpeciesItems.Any(s => s.Equals(hungerSpecies, StringComparison.OrdinalIgnoreCase)))
+                {
+                    _hungerSpeciesItems.Add(hungerSpecies);
+                }
+
                 // Find the item in the ComboBox that matches the config value
                 int matchIndex = -1;
                 for (int i = 0; i < cmbHungerCorpseSpecies.Items.Count; i++)
@@ -320,6 +340,15 @@ public partial class MainWindow : Window
                 if (map.TryGetValue(item.Species, out int max))
                 {
                     item.Max = max;
+                }
+            }
+            // Add any species present in the config but not in the built-in list, so a
+            // custom-species rule isn't invisible in the grid and then dropped on save.
+            foreach (var kvp in map)
+            {
+                if (!_rules.Any(r => r.Species.Equals(kvp.Key, StringComparison.OrdinalIgnoreCase)))
+                {
+                    _rules.Add(new RuleItem { Species = kvp.Key, Max = kvp.Value });
                 }
             }
             rulesGrid.Items.Refresh();
@@ -529,47 +558,50 @@ public partial class MainWindow : Window
             string key = m.Groups["key"].Value.ToLowerInvariant();
             string val = m.Groups["val"].Value;
 
+            // Tolerant parsers: the shared value regex can capture a decimal for an
+            // integer key (e.g. "interval_ms = 180000.0"); a raw int.Parse would throw
+            // and abort the ENTIRE config load. Fall back to the current value instead.
             switch (key)
             {
-                case "enabled": config.Enabled = bool.Parse(val); break;
-                case "interval_ms": config.IntervalMs = int.Parse(val); break;
-                case "min_player_distance": config.MinPlayerDistance = double.Parse(val, CultureInfo.InvariantCulture); break;
-                case "manual_min_player_distance": config.ManualMinPlayerDistance = double.Parse(val, CultureInfo.InvariantCulture); break;
-                case "max_spawn_attempts": config.MaxSpawnAttempts = int.Parse(val); break;
-                case "safe_manual_spawn": config.SafeManualSpawn = bool.Parse(val); break;
-                case "auto_reload_enabled": config.AutoReloadEnabled = bool.Parse(val); break;
-                case "auto_reload_interval_ms": config.AutoReloadIntervalMs = int.Parse(val); break;
-                case "player_sync_interval_ms": config.PlayerSyncIntervalMs = int.Parse(val); break;
-                case "players_write_interval_ms": config.PlayersWriteIntervalMs = int.Parse(val); break;
-                case "debug_logs_enabled": config.DebugLogsEnabled = bool.Parse(val); break;
-                case "debug_log_parsing": config.DebugLogParsing = bool.Parse(val); break;
-                case "debug_chat_commands": config.DebugChatCommands = bool.Parse(val); break;
-                case "debug_spawning": config.DebugSpawning = bool.Parse(val); break;
-                case "debug_config": config.DebugConfig = bool.Parse(val); break;
-                case "debug_command_queue": config.DebugCommandQueue = bool.Parse(val); break;
-                case "spawn_apply_growth": config.SpawnApplyGrowth = bool.Parse(val); break;
-                case "spawn_growth": config.SpawnGrowth = ClampGrowth(double.Parse(val, CultureInfo.InvariantCulture)); break;
-                case "spawn_log_enabled": config.SpawnLogEnabled = bool.Parse(val); break;
-                case "auto_spawn_corpse_only": config.AutoSpawnCorpseOnly = bool.Parse(val); break;
-                case "auto_spawn_corpse_scale": config.AutoSpawnCorpseScale = double.Parse(val, CultureInfo.InvariantCulture); break;
-                case "chat_commands_enabled": config.ChatCommandsEnabled = bool.Parse(val); break;
-                case "require_admin_for_commands": config.RequireAdminForCommands = bool.Parse(val); break;
-                case "admin_log_parse_interval_ms": config.AdminLogParseIntervalMs = int.Parse(val); break;
-                case "admin_log_parse_max_lines": config.AdminLogParseMaxLines = int.Parse(val); break;
-                case "fish_respawn_enabled": config.FishRespawnEnabled = bool.Parse(val); break;
-                case "fish_respawn_interval_ms": config.FishRespawnIntervalMs = int.Parse(val); break;
-                case "fish_respawn_only_far": config.FishRespawnOnlyFar = bool.Parse(val); break;
-                case "fish_respawn_min_player_distance": config.FishRespawnMinPlayerDistance = double.Parse(val); break;
-                case "fish_respawn_fish_amount": config.FishRespawnFishAmount = int.Parse(val); break;
-                case "hunger_corpse_enabled": config.HungerCorpseEnabled = bool.Parse(val); break;
-                case "hunger_corpse_threshold": config.HungerCorpseThreshold = float.Parse(val, CultureInfo.InvariantCulture); break;
-                case "hunger_corpse_cooldown_ms": config.HungerCorpseCooldownMs = int.Parse(val); break;
-                case "hunger_corpse_check_interval_ms": config.HungerCorpseCheckIntervalMs = int.Parse(val); break;
-                case "hunger_corpse_carnivore_only": config.HungerCorpseCarnivoreOnly = bool.Parse(val); break;
-                case "hunger_corpse_spawn_radius_min": config.HungerCorpseSpawnRadiusMin = float.Parse(val, CultureInfo.InvariantCulture); break;
-                case "hunger_corpse_spawn_radius_max": config.HungerCorpseSpawnRadiusMax = float.Parse(val, CultureInfo.InvariantCulture); break;
-                case "hunger_corpse_max_players_per_check": config.HungerCorpseMaxPlayersPerCheck = int.Parse(val); break;
-                case "hunger_corpse_match_size": config.HungerCorpseMatchSize = bool.Parse(val); break;
+                case "enabled": config.Enabled = ToBool(val, config.Enabled); break;
+                case "interval_ms": config.IntervalMs = ToInt(val, config.IntervalMs); break;
+                case "min_player_distance": config.MinPlayerDistance = ToDouble(val, config.MinPlayerDistance); break;
+                case "manual_min_player_distance": config.ManualMinPlayerDistance = ToDouble(val, config.ManualMinPlayerDistance); break;
+                case "max_spawn_attempts": config.MaxSpawnAttempts = ToInt(val, config.MaxSpawnAttempts); break;
+                case "safe_manual_spawn": config.SafeManualSpawn = ToBool(val, config.SafeManualSpawn); break;
+                case "auto_reload_enabled": config.AutoReloadEnabled = ToBool(val, config.AutoReloadEnabled); break;
+                case "auto_reload_interval_ms": config.AutoReloadIntervalMs = ToInt(val, config.AutoReloadIntervalMs); break;
+                case "player_sync_interval_ms": config.PlayerSyncIntervalMs = ToInt(val, config.PlayerSyncIntervalMs); break;
+                case "players_write_interval_ms": config.PlayersWriteIntervalMs = ToInt(val, config.PlayersWriteIntervalMs); break;
+                case "debug_logs_enabled": config.DebugLogsEnabled = ToBool(val, config.DebugLogsEnabled); break;
+                case "debug_log_parsing": config.DebugLogParsing = ToBool(val, config.DebugLogParsing); break;
+                case "debug_chat_commands": config.DebugChatCommands = ToBool(val, config.DebugChatCommands); break;
+                case "debug_spawning": config.DebugSpawning = ToBool(val, config.DebugSpawning); break;
+                case "debug_config": config.DebugConfig = ToBool(val, config.DebugConfig); break;
+                case "debug_command_queue": config.DebugCommandQueue = ToBool(val, config.DebugCommandQueue); break;
+                case "spawn_apply_growth": config.SpawnApplyGrowth = ToBool(val, config.SpawnApplyGrowth); break;
+                case "spawn_growth": config.SpawnGrowth = ClampGrowth(ToDouble(val, config.SpawnGrowth)); break;
+                case "spawn_log_enabled": config.SpawnLogEnabled = ToBool(val, config.SpawnLogEnabled); break;
+                case "auto_spawn_corpse_only": config.AutoSpawnCorpseOnly = ToBool(val, config.AutoSpawnCorpseOnly); break;
+                case "auto_spawn_corpse_scale": config.AutoSpawnCorpseScale = ToDouble(val, config.AutoSpawnCorpseScale); break;
+                case "chat_commands_enabled": config.ChatCommandsEnabled = ToBool(val, config.ChatCommandsEnabled); break;
+                case "require_admin_for_commands": config.RequireAdminForCommands = ToBool(val, config.RequireAdminForCommands); break;
+                case "admin_log_parse_interval_ms": config.AdminLogParseIntervalMs = ToInt(val, config.AdminLogParseIntervalMs); break;
+                case "admin_log_parse_max_lines": config.AdminLogParseMaxLines = ToInt(val, config.AdminLogParseMaxLines); break;
+                case "fish_respawn_enabled": config.FishRespawnEnabled = ToBool(val, config.FishRespawnEnabled); break;
+                case "fish_respawn_interval_ms": config.FishRespawnIntervalMs = ToInt(val, config.FishRespawnIntervalMs); break;
+                case "fish_respawn_only_far": config.FishRespawnOnlyFar = ToBool(val, config.FishRespawnOnlyFar); break;
+                case "fish_respawn_min_player_distance": config.FishRespawnMinPlayerDistance = ToDouble(val, config.FishRespawnMinPlayerDistance); break;
+                case "fish_respawn_fish_amount": config.FishRespawnFishAmount = ToInt(val, config.FishRespawnFishAmount); break;
+                case "hunger_corpse_enabled": config.HungerCorpseEnabled = ToBool(val, config.HungerCorpseEnabled); break;
+                case "hunger_corpse_threshold": config.HungerCorpseThreshold = ToFloat(val, config.HungerCorpseThreshold); break;
+                case "hunger_corpse_cooldown_ms": config.HungerCorpseCooldownMs = ToInt(val, config.HungerCorpseCooldownMs); break;
+                case "hunger_corpse_check_interval_ms": config.HungerCorpseCheckIntervalMs = ToInt(val, config.HungerCorpseCheckIntervalMs); break;
+                case "hunger_corpse_carnivore_only": config.HungerCorpseCarnivoreOnly = ToBool(val, config.HungerCorpseCarnivoreOnly); break;
+                case "hunger_corpse_spawn_radius_min": config.HungerCorpseSpawnRadiusMin = ToFloat(val, config.HungerCorpseSpawnRadiusMin); break;
+                case "hunger_corpse_spawn_radius_max": config.HungerCorpseSpawnRadiusMax = ToFloat(val, config.HungerCorpseSpawnRadiusMax); break;
+                case "hunger_corpse_max_players_per_check": config.HungerCorpseMaxPlayersPerCheck = ToInt(val, config.HungerCorpseMaxPlayersPerCheck); break;
+                case "hunger_corpse_match_size": config.HungerCorpseMatchSize = ToBool(val, config.HungerCorpseMatchSize); break;
             }
         }
 
@@ -593,35 +625,29 @@ public partial class MainWindow : Window
         return config;
     }
 
-    private static bool GetBool(string text, string key, bool fallback)
+    // Culture-invariant, non-throwing parsers used by ParseConfig. Integer keys accept
+    // a decimal value (rounded) so a stray "180000.0" never aborts the whole load.
+    private static bool ToBool(string val, bool fallback)
+        => bool.TryParse(val, out bool b) ? b : fallback;
+
+    private static int ToInt(string val, int fallback)
     {
-        var m = Regex.Match(text, $@"\b{Regex.Escape(key)}\s*=\s*(true|false)", RegexOptions.IgnoreCase);
-        if (m.Success)
+        if (int.TryParse(val, NumberStyles.Integer, CultureInfo.InvariantCulture, out int i))
         {
-            return string.Equals(m.Groups[1].Value, "true", StringComparison.OrdinalIgnoreCase);
+            return i;
+        }
+        if (double.TryParse(val, NumberStyles.Float, CultureInfo.InvariantCulture, out double d))
+        {
+            return (int)Math.Round(d);
         }
         return fallback;
     }
 
-    private static int GetInt(string text, string key, int fallback)
-    {
-        var m = Regex.Match(text, $@"\b{Regex.Escape(key)}\s*=\s*(\d+)", RegexOptions.IgnoreCase);
-        if (m.Success && int.TryParse(m.Groups[1].Value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int v))
-        {
-            return v;
-        }
-        return fallback;
-    }
+    private static double ToDouble(string val, double fallback)
+        => double.TryParse(val, NumberStyles.Float, CultureInfo.InvariantCulture, out double d) ? d : fallback;
 
-    private static double GetDouble(string text, string key, double fallback)
-    {
-        var m = Regex.Match(text, $@"\b{Regex.Escape(key)}\s*=\s*(-?[0-9]+(?:\.[0-9]+)?)", RegexOptions.IgnoreCase);
-        if (m.Success && double.TryParse(m.Groups[1].Value, NumberStyles.Float, CultureInfo.InvariantCulture, out double v))
-        {
-            return v;
-        }
-        return fallback;
-    }
+    private static float ToFloat(string val, float fallback)
+        => float.TryParse(val, NumberStyles.Float, CultureInfo.InvariantCulture, out float f) ? f : fallback;
 
     private static string GetString(string text, string key, string fallback)
     {
@@ -1084,31 +1110,7 @@ public partial class MainWindow : Window
                     MessageBoxButton.OK,
                     MessageBoxImage.Information);
             }
-            var combined = new List<PlayerItem>();
-
-            if (filePlayers.Count == players.Count && filePlayers.Count > 0)
-            {
-                for (int i = 0; i < filePlayers.Count; i++)
-                {
-                    combined.Add(new PlayerItem
-                    {
-                        PlayerName = players[i].PlayerName,
-                        RconId = players[i].PlayerId,
-                        Ue4ssId = filePlayers[i].Ue4ssId
-                    });
-                }
-            }
-            else
-            {
-                combined.AddRange(filePlayers);
-                combined.AddRange(players.Select(p => new PlayerItem
-                {
-                    PlayerName = p.PlayerName,
-                    RconId = p.PlayerId
-                }));
-            }
-
-            lstPlayers.ItemsSource = combined;
+            lstPlayers.ItemsSource = CombinePlayers(filePlayers, players);
         }
         catch (Exception ex)
         {
@@ -1309,30 +1311,7 @@ public partial class MainWindow : Window
 
             if (_lastRconPlayers.Count > 0)
             {
-                var combined = new List<PlayerItem>();
-                if (filePlayers.Count == _lastRconPlayers.Count && filePlayers.Count > 0)
-                {
-                    for (int i = 0; i < filePlayers.Count; i++)
-                    {
-                        combined.Add(new PlayerItem
-                        {
-                            PlayerName = _lastRconPlayers[i].PlayerName,
-                            RconId = _lastRconPlayers[i].PlayerId,
-                            Ue4ssId = filePlayers[i].Ue4ssId
-                        });
-                    }
-                    lstPlayers.ItemsSource = combined;
-                }
-                else
-                {
-                    combined.AddRange(filePlayers);
-                    combined.AddRange(_lastRconPlayers.Select(p => new PlayerItem
-                    {
-                        PlayerName = p.PlayerName,
-                        RconId = p.PlayerId
-                    }));
-                    lstPlayers.ItemsSource = combined;
-                }
+                lstPlayers.ItemsSource = CombinePlayers(filePlayers, _lastRconPlayers);
                 return;
             }
 
@@ -1347,6 +1326,40 @@ public partial class MainWindow : Window
         {
             UpdateRconFetchState();
         }
+    }
+
+    // Merge the RCON player list (name + rcon id) with the players file (name + ue4ss id).
+    // Join on player NAME, never by list position: the two sources have no guaranteed
+    // shared ordering, so index pairing could attach one player's ue4ss id to another
+    // player's row and make spawn_for/kill target the wrong person.
+    private static List<PlayerItem> CombinePlayers(List<PlayerItem> filePlayers, IReadOnlyList<RconPlayer> rconPlayers)
+    {
+        var remaining = new List<PlayerItem>(filePlayers);
+        var combined = new List<PlayerItem>();
+
+        foreach (var rp in rconPlayers)
+        {
+            int idx = remaining.FindIndex(f =>
+                string.Equals(f.PlayerName, rp.PlayerName, StringComparison.OrdinalIgnoreCase));
+
+            string ue4ssId = "";
+            if (idx >= 0)
+            {
+                ue4ssId = remaining[idx].Ue4ssId;
+                remaining.RemoveAt(idx); // consume once so duplicate names don't collide
+            }
+
+            combined.Add(new PlayerItem
+            {
+                PlayerName = rp.PlayerName,
+                RconId = rp.PlayerId,
+                Ue4ssId = ue4ssId
+            });
+        }
+
+        // File entries with no RCON name match are still shown (retain their ue4ss id).
+        combined.AddRange(remaining);
+        return combined;
     }
 
     private List<PlayerItem> LoadPlayersFile()
@@ -1411,7 +1424,7 @@ public partial class MainWindow : Window
                         txtRconPort.Text = parts[1];
                         break;
                     case "password":
-                        txtRconPass.Text = parts[1];
+                        txtRconPass.Text = UnprotectSecret(parts[1]);
                         break;
                 }
             }
@@ -1429,9 +1442,48 @@ public partial class MainWindow : Window
         {
             "host=" + txtRconHost.Text.Trim(),
             "port=" + txtRconPort.Text.Trim(),
-            "password=" + txtRconPass.Text
+            "password=" + ProtectSecret(txtRconPass.Text)
         };
         File.WriteAllLines(_rconPath, lines);
+    }
+
+    // Encrypt the RCON password at rest with Windows DPAPI (per-user) instead of
+    // storing it as plaintext. Marked with a "dpapi:" prefix so older plaintext files
+    // still load. Any failure degrades gracefully rather than losing the setting.
+    private const string SecretPrefix = "dpapi:";
+
+    private static string ProtectSecret(string plain)
+    {
+        if (string.IsNullOrEmpty(plain)) return "";
+        try
+        {
+            byte[] enc = ProtectedData.Protect(
+                Encoding.UTF8.GetBytes(plain), null, DataProtectionScope.CurrentUser);
+            return SecretPrefix + Convert.ToBase64String(enc);
+        }
+        catch
+        {
+            return plain; // fall back to plaintext rather than dropping the password
+        }
+    }
+
+    private static string UnprotectSecret(string stored)
+    {
+        if (string.IsNullOrEmpty(stored)) return "";
+        if (!stored.StartsWith(SecretPrefix, StringComparison.Ordinal))
+        {
+            return stored; // legacy plaintext value
+        }
+        try
+        {
+            byte[] enc = Convert.FromBase64String(stored[SecretPrefix.Length..]);
+            byte[] dec = ProtectedData.Unprotect(enc, null, DataProtectionScope.CurrentUser);
+            return Encoding.UTF8.GetString(dec);
+        }
+        catch
+        {
+            return ""; // undecryptable (e.g. copied from another machine/user)
+        }
     }
 
     private static List<string> ReadAllLinesShared(string path)
