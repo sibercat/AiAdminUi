@@ -188,7 +188,25 @@ public partial class MainWindow : Window
 
     private static string ResolveConfigPath()
     {
+        // Locate the server root by STRUCTURE, not by folder name: walk up from the exe
+        // looking for an ancestor that actually contains TheIsle\Binaries\Win64\config.
+        // The previous version required the root to be named exactly "TheIsleServerFiles",
+        // so anyone who named their server folder differently got "Config file not found".
         string? current = AppContext.BaseDirectory;
+        while (current != null)
+        {
+            string candidate = Path.Combine(
+                current, "TheIsle", "Binaries", "Win64", "config", "IsleServerMod_config.lua");
+            if (File.Exists(candidate))
+            {
+                return candidate;
+            }
+            current = Path.GetDirectoryName(current);
+        }
+
+        // Fall back to the legacy name-based lookup, then to an exe-relative config, so a
+        // first-run install that hasn't created the file yet still reports a sensible path.
+        current = AppContext.BaseDirectory;
         while (current != null && !current.EndsWith("TheIsleServerFiles", StringComparison.OrdinalIgnoreCase))
         {
             current = Path.GetDirectoryName(current);
@@ -211,7 +229,13 @@ public partial class MainWindow : Window
     private void ApplyVersionToHeader()
     {
         var version = Assembly.GetExecutingAssembly().GetName().Version;
-        string display = version is null ? "" : $"v{version.Major}.{version.Minor}";
+        // Include the patch number when it's non-zero, otherwise a patch release like
+        // 1.6.3 would display as "v1.6" and users couldn't tell which build they have.
+        string display = version is null
+            ? ""
+            : version.Build > 0
+                ? $"v{version.Major}.{version.Minor}.{version.Build}"
+                : $"v{version.Major}.{version.Minor}";
         txtVersion.Text = display;
         Title = string.IsNullOrEmpty(display) ? "AI Admin UI" : $"AI Admin UI {display}";
     }

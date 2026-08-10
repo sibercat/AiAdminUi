@@ -78,7 +78,7 @@
                     FontSize="15"
                     FontWeight="SemiBold"
                     Foreground="{StaticResource SecondaryTextBrush}"
-                    Text="v1.6" />
+                    Text="v1.6.3" />
             </StackPanel>
             <TextBlock
                 FontSize="13"
