@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
@@ -68,7 +68,7 @@ public partial class MainWindow : Window
         "rex",
     };
 
-    [GeneratedRegex(@"\b(?<key>enabled|interval_ms|min_player_distance|manual_min_player_distance|max_spawn_attempts|safe_manual_spawn|auto_reload_enabled|auto_reload_interval_ms|player_sync_interval_ms|players_write_interval_ms|debug_logs_enabled|debug_log_parsing|debug_chat_commands|debug_spawning|debug_config|debug_command_queue|spawn_apply_growth|spawn_growth|spawn_log_enabled|auto_spawn_corpse_only|auto_spawn_corpse_scale|chat_commands_enabled|require_admin_for_commands|admin_log_parse_interval_ms|admin_log_parse_max_lines|fish_respawn_enabled|fish_respawn_interval_ms|fish_respawn_only_far|fish_respawn_min_player_distance|fish_respawn_fish_amount|hunger_corpse_enabled|hunger_corpse_threshold|hunger_corpse_cooldown_ms|hunger_corpse_check_interval_ms|hunger_corpse_carnivore_only|hunger_corpse_spawn_radius_min|hunger_corpse_spawn_radius_max|hunger_corpse_max_players_per_check|hunger_corpse_match_size)\s*=\s*(?<val>true|false|-?[0-9]+(?:\.[0-9]+)?)", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"\b(?<key>enabled|interval_ms|min_player_distance|manual_min_player_distance|max_spawn_attempts|safe_manual_spawn|auto_reload_enabled|auto_reload_interval_ms|player_sync_interval_ms|players_write_interval_ms|debug_logs_enabled|debug_log_parsing|debug_chat_commands|debug_spawning|debug_config|debug_command_queue|spawn_apply_growth|spawn_growth|spawn_log_enabled|auto_spawn_corpse_only|auto_spawn_corpse_scale|chat_commands_enabled|require_admin_for_commands|fish_respawn_enabled|fish_respawn_interval_ms|fish_respawn_only_far|fish_respawn_min_player_distance|fish_respawn_fish_amount|hunger_corpse_enabled|hunger_corpse_threshold|hunger_corpse_cooldown_ms|hunger_corpse_check_interval_ms|hunger_corpse_carnivore_only|hunger_corpse_spawn_radius_min|hunger_corpse_spawn_radius_max|hunger_corpse_max_players_per_check|hunger_corpse_match_size)\s*=\s*(?<val>true|false|-?[0-9]+(?:\.[0-9]+)?)", RegexOptions.IgnoreCase)]
     private static partial Regex ConfigValueRegex();
 
     [GeneratedRegex(@"rules\s*=\s*\{(?<body>[\s\S]*?)\}\s*,", RegexOptions.Multiline)]
@@ -282,8 +282,6 @@ public partial class MainWindow : Window
             txtAutoSpawnCorpseScale.Text = config.AutoSpawnCorpseScale.ToString("0.###", CultureInfo.InvariantCulture);
             chkChatCommandsEnabled.IsChecked = config.ChatCommandsEnabled;
             chkRequireAdminForCommands.IsChecked = config.RequireAdminForCommands;
-            txtAdminLogParseInterval.Text = MsToMinutes(config.AdminLogParseIntervalMs).ToString("0.###", CultureInfo.InvariantCulture);
-            txtAdminLogParseMaxLines.Text = config.AdminLogParseMaxLines.ToString(CultureInfo.InvariantCulture);
             chkFishRespawnEnabled.IsChecked = config.FishRespawnEnabled;
             txtFishRespawnInterval.Text = MsToSeconds(config.FishRespawnIntervalMs).ToString("0.###", CultureInfo.InvariantCulture);
             chkFishRespawnOnlyFar.IsChecked = config.FishRespawnOnlyFar;
@@ -332,7 +330,6 @@ public partial class MainWindow : Window
             chkHungerCorpseMatchSize.IsChecked = config.HungerCorpseMatchSize;
             _autoLoopRunning = false;
             UpdateAutoToggleState();
-            UpdateAdminLogParseState();
 
             var map = config.Rules;
             foreach (var item in _rules)
@@ -394,8 +391,6 @@ public partial class MainWindow : Window
             AutoSpawnCorpseScale = Math.Max(0.05, ReadDouble(txtAutoSpawnCorpseScale.Text, 0.1)),
             ChatCommandsEnabled = chkChatCommandsEnabled.IsChecked == true,
             RequireAdminForCommands = chkRequireAdminForCommands.IsChecked == true,
-            AdminLogParseIntervalMs = Math.Max(1000, ReadMinutesToMs(txtAdminLogParseInterval.Text, 60000)),
-            AdminLogParseMaxLines = Math.Max(100, ReadInt(txtAdminLogParseMaxLines.Text, 10000)),
             FishRespawnEnabled = chkFishRespawnEnabled.IsChecked == true,
             FishRespawnIntervalMs = Math.Max(10000, ReadSecondsToMs(txtFishRespawnInterval.Text, 300000)),
             FishRespawnOnlyFar = chkFishRespawnOnlyFar.IsChecked == true,
@@ -454,8 +449,6 @@ public partial class MainWindow : Window
             AutoSpawnCorpseScale = 0.1,
             ChatCommandsEnabled = false,
             RequireAdminForCommands = true,
-            AdminLogParseIntervalMs = 60000,
-            AdminLogParseMaxLines = 10000,
             FishRespawnEnabled = false,
             FishRespawnIntervalMs = 300000,  // 5 minutes
             FishRespawnOnlyFar = true,
@@ -586,8 +579,6 @@ public partial class MainWindow : Window
                 case "auto_spawn_corpse_scale": config.AutoSpawnCorpseScale = ToDouble(val, config.AutoSpawnCorpseScale); break;
                 case "chat_commands_enabled": config.ChatCommandsEnabled = ToBool(val, config.ChatCommandsEnabled); break;
                 case "require_admin_for_commands": config.RequireAdminForCommands = ToBool(val, config.RequireAdminForCommands); break;
-                case "admin_log_parse_interval_ms": config.AdminLogParseIntervalMs = ToInt(val, config.AdminLogParseIntervalMs); break;
-                case "admin_log_parse_max_lines": config.AdminLogParseMaxLines = ToInt(val, config.AdminLogParseMaxLines); break;
                 case "fish_respawn_enabled": config.FishRespawnEnabled = ToBool(val, config.FishRespawnEnabled); break;
                 case "fish_respawn_interval_ms": config.FishRespawnIntervalMs = ToInt(val, config.FishRespawnIntervalMs); break;
                 case "fish_respawn_only_far": config.FishRespawnOnlyFar = ToBool(val, config.FishRespawnOnlyFar); break;
@@ -696,8 +687,6 @@ public partial class MainWindow : Window
         sb.AppendLine($"    auto_spawn_corpse_scale = {config.AutoSpawnCorpseScale.ToString(CultureInfo.InvariantCulture)},");
         sb.AppendLine($"    chat_commands_enabled = {config.ChatCommandsEnabled.ToString().ToLowerInvariant()},");
         sb.AppendLine($"    require_admin_for_commands = {config.RequireAdminForCommands.ToString().ToLowerInvariant()},");
-        sb.AppendLine($"    admin_log_parse_interval_ms = {config.AdminLogParseIntervalMs},");
-        sb.AppendLine($"    admin_log_parse_max_lines = {config.AdminLogParseMaxLines},");
         sb.AppendLine($"    fish_respawn_enabled = {config.FishRespawnEnabled.ToString().ToLowerInvariant()},");
         sb.AppendLine($"    fish_respawn_interval_ms = {config.FishRespawnIntervalMs},");
         sb.AppendLine($"    fish_respawn_only_far = {config.FishRespawnOnlyFar.ToString().ToLowerInvariant()},");
@@ -922,35 +911,6 @@ public partial class MainWindow : Window
         btnExecute.ToolTip = "Execute the selected command";
     }
 
-    private void UpdateAdminLogParseState()
-    {
-        // Log parsing is only needed when chat commands are enabled AND admin requirement is enabled
-        bool chatEnabled = chkChatCommandsEnabled.IsChecked == true;
-        bool adminRequired = chkRequireAdminForCommands.IsChecked == true;
-        bool logParseNeeded = chatEnabled && adminRequired;
-
-        lblAdminLogParseInterval.IsEnabled = logParseNeeded;
-        txtAdminLogParseInterval.IsEnabled = logParseNeeded;
-        lblAdminLogParseMaxLines.IsEnabled = logParseNeeded;
-        txtAdminLogParseMaxLines.IsEnabled = logParseNeeded;
-
-        if (!logParseNeeded)
-        {
-            txtAdminLogParseInterval.ToolTip = "Log parsing is disabled (only needed when in-game commands AND admin requirement are both enabled)";
-            txtAdminLogParseMaxLines.ToolTip = "Log parsing is disabled (only needed when in-game commands AND admin requirement are both enabled)";
-        }
-        else
-        {
-            txtAdminLogParseInterval.ToolTip = "How often to parse join log for Steam IDs (minutes, min 0.017 = 1 second). Higher values for bigger servers to reduce CPU usage.";
-            txtAdminLogParseMaxLines.ToolTip = "Maximum lines to parse per interval (min 100). Prevents lag spikes with large logs. 10000 is recommended for 400 player servers.";
-        }
-    }
-
-    private void AdminCheckBox_Changed(object sender, RoutedEventArgs e)
-    {
-        UpdateAdminLogParseState();
-    }
-
     private async void btnExecute_Click(object sender, RoutedEventArgs e)
     {
         try
@@ -1149,8 +1109,6 @@ public partial class MainWindow : Window
         public double AutoSpawnCorpseScale { get; set; } = 0.1;
         public bool ChatCommandsEnabled { get; set; } = false;
         public bool RequireAdminForCommands { get; set; } = true;
-        public int AdminLogParseIntervalMs { get; set; } = 60000;
-        public int AdminLogParseMaxLines { get; set; } = 10000;
         public Dictionary<string, int> Rules { get; set; } = new(StringComparer.OrdinalIgnoreCase);
         public string RconHost { get; set; } = "";
         public string RconPort { get; set; } = "";
@@ -1547,8 +1505,6 @@ public partial class MainWindow : Window
         if (Math.Abs(current.AutoSpawnCorpseScale - _originalConfig.AutoSpawnCorpseScale) > 0.001) return true;
         if (current.ChatCommandsEnabled != _originalConfig.ChatCommandsEnabled) return true;
         if (current.RequireAdminForCommands != _originalConfig.RequireAdminForCommands) return true;
-        if (current.AdminLogParseIntervalMs != _originalConfig.AdminLogParseIntervalMs) return true;
-        if (current.AdminLogParseMaxLines != _originalConfig.AdminLogParseMaxLines) return true;
         if (current.FishRespawnEnabled != _originalConfig.FishRespawnEnabled) return true;
         if (current.FishRespawnIntervalMs != _originalConfig.FishRespawnIntervalMs) return true;
         if (current.FishRespawnOnlyFar != _originalConfig.FishRespawnOnlyFar) return true;

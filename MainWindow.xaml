@@ -1636,8 +1636,7 @@
                             Grid.Row="0"
                             Grid.Column="2"
                             VerticalAlignment="Center"
-                            Checked="AdminCheckBox_Changed"
-                            Unchecked="AdminCheckBox_Changed">
+                            >
                             <CheckBox.ToolTip>
                                 <TextBlock MaxWidth="450" TextWrapping="Wrap">
                                     <Bold>In-Game /ai Chat Commands</Bold><LineBreak/>
@@ -1668,61 +1667,24 @@
                             Grid.Column="2"
                             Margin="0,8,0,0"
                             VerticalAlignment="Center"
-                            Checked="AdminCheckBox_Changed"
-                            Unchecked="AdminCheckBox_Changed">
+                            >
                             <CheckBox.ToolTip>
                                 <TextBlock MaxWidth="450" TextWrapping="Wrap">
                                     <Bold>Require Admin Authorization</Bold><LineBreak/>
                                     When enabled, only admins can use /ai chat commands.<LineBreak/><LineBreak/>
                                     <Bold>How it works:</Bold><LineBreak/>
-                                    1. Mod parses TheIsle.log for player join messages<LineBreak/>
-                                    2. Extracts Steam IDs from join logs<LineBreak/>
-                                    3. Checks Steam ID against Game.ini AdminsSteamIDs<LineBreak/>
-                                    4. Allows/denies command based on match<LineBreak/><LineBreak/>
+                                    1. Mod reads the caller's Steam ID directly from their connection<LineBreak/>
+                                    2. Checks that Steam ID against Game.ini AdminsSteamIDs<LineBreak/>
+                                    3. Allows/denies the command based on the match<LineBreak/><LineBreak/>
                                     <Bold>Security:</Bold> Recommended to leave enabled. Prevents players from controlling AI spawns.<LineBreak/><LineBreak/>
                                     <Bold>Note:</Bold> This Admin UI bypasses this check (server owner always has access).
                                 </TextBlock>
                             </CheckBox.ToolTip>
                         </CheckBox>
 
-                        <!--  Log Parsing Settings  -->
-                        <TextBlock
-                            x:Name="lblAdminLogParseInterval"
-                            Grid.Row="2"
-                            Grid.Column="0"
-                            Margin="0,16,0,0"
-                            VerticalAlignment="Center"
-                            Text="Log Parse Interval (min)"
-                            ToolTip="How often to parse join log for Steam IDs" />
-                        <TextBox
-                            x:Name="txtAdminLogParseInterval"
-                            Grid.Row="2"
-                            Grid.Column="2"
-                            Height="26"
-                            Margin="0,16,0,0"
-                            VerticalContentAlignment="Center"
-                            ToolTip="How often to parse join log for Steam IDs (minutes, min 0.017 = 1 second). Higher values for bigger servers to reduce CPU usage." />
-
-                        <TextBlock
-                            x:Name="lblAdminLogParseMaxLines"
-                            Grid.Row="3"
-                            Grid.Column="0"
-                            Margin="0,8,0,0"
-                            VerticalAlignment="Center"
-                            Text="Log Parse Max Lines"
-                            ToolTip="Maximum lines to parse per interval" />
-                        <TextBox
-                            x:Name="txtAdminLogParseMaxLines"
-                            Grid.Row="3"
-                            Grid.Column="2"
-                            Height="26"
-                            Margin="0,8,0,0"
-                            VerticalContentAlignment="Center"
-                            ToolTip="Maximum lines to parse per interval (min 100). Prevents lag spikes with large logs. 10000 is recommended for 400 player servers." />
-
                         <!--  Info Section  -->
                         <Border
-                            Grid.Row="4"
+                            Grid.Row="2"
                             Grid.Column="0"
                             Grid.ColumnSpan="3"
                             Margin="0,16,0,0"
