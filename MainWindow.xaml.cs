@@ -68,7 +68,7 @@ public partial class MainWindow : Window
         "rex",
     };
 
-    [GeneratedRegex(@"\b(?<key>enabled|interval_ms|min_player_distance|manual_min_player_distance|max_spawn_attempts|safe_manual_spawn|auto_reload_enabled|auto_reload_interval_ms|player_sync_interval_ms|players_write_interval_ms|debug_logs_enabled|debug_log_parsing|debug_chat_commands|debug_spawning|debug_config|debug_command_queue|spawn_apply_growth|spawn_growth|spawn_log_enabled|auto_spawn_corpse_only|auto_spawn_corpse_scale|chat_commands_enabled|require_admin_for_commands|fish_respawn_enabled|fish_respawn_interval_ms|fish_respawn_only_far|fish_respawn_min_player_distance|fish_respawn_fish_amount|hunger_corpse_enabled|hunger_corpse_threshold|hunger_corpse_cooldown_ms|hunger_corpse_check_interval_ms|hunger_corpse_carnivore_only|hunger_corpse_spawn_radius_min|hunger_corpse_spawn_radius_max|hunger_corpse_max_players_per_check|hunger_corpse_match_size)\s*=\s*(?<val>true|false|-?[0-9]+(?:\.[0-9]+)?)", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"\b(?<key>enabled|interval_ms|min_player_distance|manual_min_player_distance|max_spawn_attempts|safe_manual_spawn|auto_reload_enabled|auto_reload_interval_ms|player_sync_interval_ms|players_write_interval_ms|debug_logs_enabled|debug_chat_commands|debug_spawning|debug_config|debug_command_queue|spawn_apply_growth|spawn_growth|spawn_log_enabled|auto_spawn_corpse_only|auto_spawn_corpse_scale|chat_commands_enabled|require_admin_for_commands|fish_respawn_enabled|fish_respawn_interval_ms|fish_respawn_only_far|fish_respawn_min_player_distance|fish_respawn_fish_amount|hunger_corpse_enabled|hunger_corpse_threshold|hunger_corpse_cooldown_ms|hunger_corpse_check_interval_ms|hunger_corpse_carnivore_only|hunger_corpse_spawn_radius_min|hunger_corpse_spawn_radius_max|hunger_corpse_max_players_per_check|hunger_corpse_match_size)\s*=\s*(?<val>true|false|-?[0-9]+(?:\.[0-9]+)?)", RegexOptions.IgnoreCase)]
     private static partial Regex ConfigValueRegex();
 
     [GeneratedRegex(@"rules\s*=\s*\{(?<body>[\s\S]*?)\}\s*,", RegexOptions.Multiline)]
@@ -114,8 +114,6 @@ public partial class MainWindow : Window
             txtPlayersWriteIntervalMs.TextChanged += (s, e) => UpdateDirtyState();
             chkDebugLogsEnabled.Checked += (s, e) => UpdateDirtyState();
             chkDebugLogsEnabled.Unchecked += (s, e) => UpdateDirtyState();
-            chkDebugLogParsing.Checked += (s, e) => UpdateDirtyState();
-            chkDebugLogParsing.Unchecked += (s, e) => UpdateDirtyState();
             chkDebugChatCommands.Checked += (s, e) => UpdateDirtyState();
             chkDebugChatCommands.Unchecked += (s, e) => UpdateDirtyState();
             chkDebugSpawning.Checked += (s, e) => UpdateDirtyState();
@@ -269,7 +267,6 @@ public partial class MainWindow : Window
             txtPlayerSyncIntervalMs.Text = MsToMinutes(config.PlayerSyncIntervalMs).ToString("0.###", CultureInfo.InvariantCulture);
             txtPlayersWriteIntervalMs.Text = MsToMinutes(config.PlayersWriteIntervalMs).ToString("0.###", CultureInfo.InvariantCulture);
             chkDebugLogsEnabled.IsChecked = config.DebugLogsEnabled;
-            chkDebugLogParsing.IsChecked = config.DebugLogParsing;
             chkDebugChatCommands.IsChecked = config.DebugChatCommands;
             chkDebugSpawning.IsChecked = config.DebugSpawning;
             chkDebugConfig.IsChecked = config.DebugConfig;
@@ -378,7 +375,6 @@ public partial class MainWindow : Window
             PlayerSyncIntervalMs = ReadMinutesToMs(txtPlayerSyncIntervalMs.Text, 60000),
             PlayersWriteIntervalMs = ReadMinutesToMs(txtPlayersWriteIntervalMs.Text, 15000),
             DebugLogsEnabled = chkDebugLogsEnabled.IsChecked == true,
-            DebugLogParsing = chkDebugLogParsing.IsChecked == true,
             DebugChatCommands = chkDebugChatCommands.IsChecked == true,
             DebugSpawning = chkDebugSpawning.IsChecked == true,
             DebugConfig = chkDebugConfig.IsChecked == true,
@@ -436,7 +432,6 @@ public partial class MainWindow : Window
             PlayerSyncIntervalMs = 60000,
             PlayersWriteIntervalMs = 15000,
             DebugLogsEnabled = false,
-            DebugLogParsing = false,
             DebugChatCommands = false,
             DebugSpawning = false,
             DebugConfig = false,
@@ -567,7 +562,6 @@ public partial class MainWindow : Window
                 case "player_sync_interval_ms": config.PlayerSyncIntervalMs = ToInt(val, config.PlayerSyncIntervalMs); break;
                 case "players_write_interval_ms": config.PlayersWriteIntervalMs = ToInt(val, config.PlayersWriteIntervalMs); break;
                 case "debug_logs_enabled": config.DebugLogsEnabled = ToBool(val, config.DebugLogsEnabled); break;
-                case "debug_log_parsing": config.DebugLogParsing = ToBool(val, config.DebugLogParsing); break;
                 case "debug_chat_commands": config.DebugChatCommands = ToBool(val, config.DebugChatCommands); break;
                 case "debug_spawning": config.DebugSpawning = ToBool(val, config.DebugSpawning); break;
                 case "debug_config": config.DebugConfig = ToBool(val, config.DebugConfig); break;
@@ -674,7 +668,6 @@ public partial class MainWindow : Window
         sb.AppendLine($"    player_sync_interval_ms = {config.PlayerSyncIntervalMs},");
         sb.AppendLine($"    players_write_interval_ms = {config.PlayersWriteIntervalMs},");
         sb.AppendLine($"    debug_logs_enabled = {config.DebugLogsEnabled.ToString().ToLowerInvariant()},");
-        sb.AppendLine($"    debug_log_parsing = {config.DebugLogParsing.ToString().ToLowerInvariant()},");
         sb.AppendLine($"    debug_chat_commands = {config.DebugChatCommands.ToString().ToLowerInvariant()},");
         sb.AppendLine($"    debug_spawning = {config.DebugSpawning.ToString().ToLowerInvariant()},");
         sb.AppendLine($"    debug_config = {config.DebugConfig.ToString().ToLowerInvariant()},");
@@ -1096,7 +1089,6 @@ public partial class MainWindow : Window
         public int PlayerSyncIntervalMs { get; set; } = 60000;
         public int PlayersWriteIntervalMs { get; set; } = 15000;
         public bool DebugLogsEnabled { get; set; } = false;
-        public bool DebugLogParsing { get; set; } = false;
         public bool DebugChatCommands { get; set; } = false;
         public bool DebugSpawning { get; set; } = false;
         public bool DebugConfig { get; set; } = false;
@@ -1492,7 +1484,6 @@ public partial class MainWindow : Window
         if (current.PlayerSyncIntervalMs != _originalConfig.PlayerSyncIntervalMs) return true;
         if (current.PlayersWriteIntervalMs != _originalConfig.PlayersWriteIntervalMs) return true;
         if (current.DebugLogsEnabled != _originalConfig.DebugLogsEnabled) return true;
-        if (current.DebugLogParsing != _originalConfig.DebugLogParsing) return true;
         if (current.DebugChatCommands != _originalConfig.DebugChatCommands) return true;
         if (current.DebugSpawning != _originalConfig.DebugSpawning) return true;
         if (current.DebugConfig != _originalConfig.DebugConfig) return true;

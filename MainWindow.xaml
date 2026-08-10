@@ -1,4 +1,4 @@
-<Window
+﻿<Window
     x:Class="AiAdminUi.MainWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -579,29 +579,6 @@
                                     <ColumnDefinition Width="10" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
-
-                                <TextBlock
-                                    Grid.Row="0"
-                                    Grid.Column="0"
-                                    VerticalAlignment="Center"
-                                    Text="Log Parsing" />
-                                <CheckBox
-                                    x:Name="chkDebugLogParsing"
-                                    Grid.Row="0"
-                                    Grid.Column="2"
-                                    VerticalAlignment="Center">
-                                    <CheckBox.ToolTip>
-                                        <TextBlock MaxWidth="450" TextWrapping="Wrap">
-                                            <Bold>Log File Parsing Debug</Bold><LineBreak/>
-                                            Shows: File size, read position, lines processed, Steam ID extraction, player cache contents<LineBreak/><LineBreak/>
-                                            <Bold>Use when:</Bold> Chat commands not recognizing admins, Steam ID lookup failing<LineBreak/><LineBreak/>
-                                            <Bold>Example output:</Bold><LineBreak/>
-                                            "Log parsing: Found player 'sibercat' -> SteamID 76561197993213308"<LineBreak/>
-                                            "Cache now has 3 entries"<LineBreak/><LineBreak/>
-                                            <Bold>Performance:</Bold> Thread-safe with mutex-protected cache updates. Minimal lock duration by collecting updates locally first.
-                                        </TextBlock>
-                                    </CheckBox.ToolTip>
-                                </CheckBox>
 
                                 <TextBlock
                                     Grid.Row="1"
@@ -1705,7 +1682,7 @@
                                     Margin="0,0,0,4"
                                     Foreground="{StaticResource SecondaryTextBrush}"
                                     TextWrapping="Wrap">
-                                    • Join log is parsed to map player names to Steam IDs (configurable interval above)
+                                    • Each command's caller is identified by the Steam ID on their own connection (cannot be spoofed by renaming)
                                 </TextBlock>
                                 <TextBlock
                                     Margin="0,0,0,4"
