@@ -4,7 +4,7 @@
 
 This repository contains the **source for the UI only**. The packaged, standalone `AiAdminUi.exe` and the mod itself are on the [Releases](https://github.com/sibercat/AiAdminUi/releases/latest) page.
 
-**Current version: v1.6.2**
+**Current version: v1.6.3**
 
 ![AI Admin UI](https://raw.githubusercontent.com/sibercat/AiAdminUi/refs/heads/main/uiScreen.png)
 
